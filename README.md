@@ -1,0 +1,2 @@
+# pca
+principal conponent analysis
