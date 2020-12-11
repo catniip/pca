@@ -1,0 +1,65 @@
+from numpy import cov
+from numpy.linalg import eig
+from numpy.linalg import inv
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import matplotlib.ticker as mtick
+
+
+from sklearn.preprocessing import StandardScaler
+
+X = np.array([[-1, -1, 4], [-2, -1, 2], [-3, -2, 5], [1, 1, 3], [2, 1, 1], [3, 2, 9]])
+
+# Normalize columns 
+scalar = StandardScaler()
+scalar.fit(X)
+normed = scalar.transform(X)
+
+# Calcualte covariance matrix of normalized data
+cov_matrix = cov(normed.T)
+print(cov_matrix)
+
+# Eigen decomposition of covariance matrix
+eig_values, eig_vectors = eig(cov_matrix)
+print(eig_values)
+print(eig_vectors)
+
+# Confirm the length of eigen vectors
+for ev in eig_vectors:
+    np.testing.assert_array_almost_equal(1.0, np.linalg.norm(ev))
+print('Everything ok!')
+
+# Make a list of (eigenvalue, eigenvector) tuples
+eig_pairs = [(np.abs(eig_values[i]), eig_vectors[:,i]) for i in range(len(eig_values))]
+
+# Sort the (eigenvalue, eigenvector) tuples from high to low
+eig_pairs.sort(key = lambda eig_pairs: eig_pairs[0])
+eig_pairs.reverse()
+
+"""
+# Visually confirm that the list is correctly sorted by decreasing eigenvalues
+print('Eigenvalues in descending order:')
+for i in eig_pairs:
+    print(i[0])
+"""
+ 
+# Explained variance ratio
+tot = sum(eig_values)
+var_exp_np = [(i / tot) for i in sorted(eig_values, reverse=True)]
+cum_var_exp_np = np.cumsum(var_exp_np)
+
+fig = plt.figure()
+ax = fig.subplots(1,1)
+ax.scatter(range(1,len(eig_values)+1),cum_var_exp_np)
+
+plt.xlabel('Principal Components')
+plt.ylabel('Cumulative explained variance in percent')
+ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+
+# Project data
+pc1 = eig_pairs[0][1]
+projected_data = np.dot(normed, pc1.T)
+
+
+
