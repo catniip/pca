@@ -1,0 +1,209 @@
+import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+import matplotlib.ticker as mtick
+
+from sklearn.preprocessing import StandardScaler
+from sklearn.decomposition import PCA
+
+scalar = StandardScaler()
+
+X = np.array([[-1, -1, 4], [-2, -1, 2], [-3, -2, 5], [1, 1, 3], [2, 1, 1], [3, 2, 9]])
+
+# Fitting and normalizing
+scalar.fit(X)
+scaled_data = scalar.transform(X)
+
+# Set PCA 
+n = 4 # number of principle components
+pca = PCA(n_components = n)
+pca_transformed_data = pca.fit_transform(scaled_data)
+
+pca_transformed_data = pd.DataFrame(data=pca_transformed_data, columns=['PC %s' %i for i in range(1,n+1)])
+
+# plot the correlation matrix 
+corr = normed.corr()
+plt.figure(dpi=200)
+sns.heatmap(corr, cmap='coolwarm', square=True, annot=True)#, vmin=-1, vmax=1
+#plt.savefig('corr_matrix.png')
+#corr.to_csv('Corr_matrix_extracted.csv')
+
+# Calculate the covariance matrix
+cov_matrix_data = pca.get_covariance()
+cov = pd.DataFrame(cov_matrix_data)
+plt.figure()
+sns.heatmap(cov, cmap='coolwarm', square=True, annot=True, vmin=-1, vmax=1)
+#cov.to_csv('Covariance_matrix.csv')
+
+
+# Eigen decomposition of covariance matrix
+eig_val, eig_vect = np.linalg.eig(cov_matrix_data)
+# Make a list of (eigenvalue, eigenvector) tuples
+eig_pa = [(np.abs(eig_val[i]), eig_vect[:,i]) for i in range(len(eig_val))]
+
+# Sort the (eigenvalue, eigenvector) tuples from high to low
+eig_pa.sort(key = lambda eig_pa: eig_pa[0])
+eig_pa.reverse()
+
+"""
+# eigendecomposition with singular vector decomposition (SVD)
+eig_vect_svd, s, v = np.linalg.svd(cov_matrix_data)
+"""
+
+pca_explained_variance_ratio = pca.explained_variance_ratio_
+
+print('Explained variation per principal component: {}'.format(pca.explained_variance_ratio_))
+
+# Explained variance ratio in percent
+tot = sum(pca_explained_variance_ratio)
+cum_var_exp = np.cumsum(pca.explained_variance_ratio_)
+
+# plot variance ratio of each pc
+fig = plt.figure(dpi=200)
+x_ticks_ratio = ['PC1', 'PC2', 'PC3', 'PC4', 'PC5', 'PC6']
+ax = fig.subplots(1,1)
+my_X = [0, 1, 2, 3] #, 3, 4, 5
+ax.bar(my_X,pca_explained_variance_ratio)
+for x, y in zip(my_X[0:n+1], pca_explained_variance_ratio):
+    plt.text(x, y, '%.2f%%' % (y * 100), ha='center', va='bottom')
+ax.set_xticks(my_X)
+ax.set_xticklabels(x_ticks_ratio)
+ax.set_ylim(0, 0.6)
+ax.yaxis.set_major_formatter(mtick.PercentFormatter(1, decimals=0))
+plt.rcParams['font.size']=14
+plt.xlabel('Principal components')
+plt.ylabel('Variance ratio of each PC')
+
+
+# plot cumulative variance ratio
+fig = plt.figure(dpi=200)
+ax = fig.subplots(1,1)
+ax.scatter(range(1,n+1),cum_var_exp)
+plt.rcParams['font.size']=14
+plt.xlabel('Number of principal components')
+plt.ylabel('Cumulative variance ratio')
+ax.yaxis.set_major_formatter(mtick.PercentFormatter(1))
+
+# PCA vector components
+pca_comp_df = pd.DataFrame(pca.components_, columns=cols)
+
+"""
+plt.figure(figsize = (30,30))
+
+# plotting heatmap
+sns.heatmap(pca_comp_df)
+"""
+
+#calculate the standard deviaiton of each PC
+    
+pca_transformed_std = []
+pca_transformed_mean = []
+for i in range(n):
+    pc_std = np.std(pca_transformed_data.iloc[:, i])
+    pc_mean = np.mean(pca_transformed_data.iloc[:, i])
+    pca_transformed_std.append(pc_std)
+    pca_transformed_mean.append(pc_mean)
+    
+#%%
+# plot histgram of transformed data
+fig = plt.figure(figsize = (24, 16))
+for i in range(n):
+    ax = fig.add_subplot(2, 2, i+1)
+    sns.distplot(pca_transformed_tft[:,i], kde=False) 
+    xlabel = use_cols[i]
+    ax.set_xlabel(xlabel) 
+
+    
+#%%
+# Inverse transform
+inverse_data = pca.inverse_transform(pca_transformed_data)
+corr_inverse_data = pd.DataFrame(inverse_data, columns=cols).corr()
+fig = plt.figure(dpi=200)
+sns.heatmap(corr_inverse_data, cmap='coolwarm', square=True, annot=True)
+#plt.savefig('corr_inverse_pc4.png', dpi=100)
+
+# calculate std of inverse transformed data
+std_original_data_inverse_trans = []
+mean_original_data_inverse_trans = []
+for i in range(n):
+    std_temp = np.std(inverse_data[:, i])
+    std_original_data_inverse_trans.append(std_temp)
+    mean_temp = np.mean(inverse_data[:, i])
+    mean_original_data_inverse_trans.append(mean_temp)
+print(std_original_data_inverse_trans)
+print(mean_original_data_inverse_trans)
+    
+std_diag = np.diag(std_array)
+inverse_data_scale_back = np.dot(inverse_data, std_diag)
+
+inverse_data_scale_mean = inverse_tft_scale_back + mean_array
+inverse_data_scale_mean_df = pd.DataFrame(inverse_tft_scale_mean, columns=cols)
+#sns.pairplot(inverse_tft_scale_mean_df)
+plt.rcParams['font.size']=14
+#plt.savefig('pairplot_6params_inverse_pc4.png', dpi=100)
+#%%
+# plot histgram of Inverse transformed data
+fig = plt.figure(figsize = (24, 16))
+for i in range(6):
+    ax = fig.add_subplot(2, 3, i+1)
+    sns.distplot(inverse_data_scale_mean_df.iloc[:,i], kde=False) 
+    xlabel = use_cols[i]
+    ax.set_xlabel(xlabel) 
+    
+
+# Generate data that have the same correlation with original data 
+# from Gaussian distributed random data point
+
+# Generate gaussian distributed random data point
+np.random.seed(1)
+gaussian = np.zeros(shape=(200, n)).T
+for i in range(n):
+    gaus = np.random.normal(0, pca_transformed_std[i], 200)
+    gaussian[i] = gaus
+gaussian = gaussian.T
+
+gaussian_df = pd.DataFrame(gaussian)
+gaussian_std = np.std(gaussian_df)
+gaussian_mean = np.mean(gaussian_df)
+
+# Invert transform of generated data
+gene_data = pca.inverse_transform(gaussian)
+
+gene_data_df = pd.DataFrame(gene_data, columns=cols)
+
+# Calculate the std and mean of back transformed data
+std_invert_transed = []
+mean_invert_transed = []
+for i in range(n):
+    std_temp = np.std(gene_data_df.iloc[:,i])
+    std_invert_transed.append(std_temp)
+    mean_temp = np.mean(gene_data_df.iloc[:,i])
+    mean_invert_transed.append(mean_temp)
+print(std_invert_transed)
+print(mean_invert_transed)
+    
+
+# Convert to the original scale
+std_diag = np.diag(std_array)
+gene_data_scale_back = np.dot(gene_tft, std_diag)
+gene_data_scale_mean = gene_tft_scale_back + mean_array
+gene_data_scale_mean_df = pd.DataFrame(gene_tft_scale_mean, columns=cols)
+
+# Correlation matrix and covariance matrix
+corr_gene = gene_data_df.corr()
+plt.figure(dpi=200)
+sns.heatmap(corr_gene, cmap='coolwarm', square=True, annot=True)#, vmin=-0.8, vmax=0.8
+#corr_gene.to_csv('Corr_matrix_generatePC{}.csv'.format(n))
+
+cov_gene_data = np.cov(gene_data.T)
+
+# plot histgram of generated data
+fig = plt.figure(figsize = (24, 16), dpi=100)
+for i in range(param_num):
+    ax = fig.add_subplot(2, 2, i+1)
+    sns.distplot(gene_data_scale_mean_df.iloc[:,i], kde=False) 
+    xlabel = use_cols[i]
+    ax.set_xlabel(xlabel) 
+plt.tight_layout() 
+
